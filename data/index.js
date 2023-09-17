@@ -48,13 +48,16 @@ function getCustomInfo(clientsInfo, serverInfo) {
 
   const onlineUsersNicknames = clientsInfo.length > 0 ? clientsInfo.map((clientsInfo) => clientsInfo.nickname).join(", ") : "No users online";
 
+  console.log(clientsInfo);
+
   const customInfo = {
     serverUptimeDays: uptime_days,
     serverUptimeHours: uptime_remainder_hours,
     serverUptimeMinutes: uptime_remainder_minutes,
     serverUptimeSeconds: uptime_remainder_seconds,
     serverUptimeFormatted: formattedUptime,
-    usersOnlineFormatted: onlineUsersNicknames
+    serverClientsOnline: clientsInfo.length,
+    serverClientsFormatted: onlineUsersNicknames
   };
 
   return customInfo;
