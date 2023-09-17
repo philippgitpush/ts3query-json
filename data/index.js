@@ -54,8 +54,7 @@ function getCustomInfo(clientsInfo, serverInfo) {
     serverUptimeMinutes: uptime_remainder_minutes,
     serverUptimeSeconds: uptime_remainder_seconds,
     serverUptimeFormatted: formattedUptime,
-    serverClientsOnline: clientsInfo.length,
-    serverClientsFormatted: onlineUsersNicknames
+    serverClientsFormatted: "(" + clientsInfo.length + ") " + onlineUsersNicknames
   };
 
   return customInfo;
