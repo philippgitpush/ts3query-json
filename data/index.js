@@ -23,12 +23,14 @@ async function getTS3Info() {
     const clientsInfo = await teamspeak.clientList({ clientType: 0 });
     const customInfo = getCustomInfo(clientsInfo, serverInfo);
 
+    teamspeak.forceQuit();
+
     return { serverInfo, customInfo };
   } catch (e) {
     console.error("Error connecting to TeamSpeak server:");
     console.error(e);
     throw e;
-  }
+  } 
 }
 
 function getCustomInfo(clientsInfo, serverInfo) {
