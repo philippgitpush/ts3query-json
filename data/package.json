@@ -1,0 +1,15 @@
+{
+  "name": "ts3query-json",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "author": "philfiru",
+  "license": "MIT",
+  "dependencies": {
+    "http": "^0.0.1-security",
+    "ts3-nodejs-library": "^3.5.0"
+  }
+}
