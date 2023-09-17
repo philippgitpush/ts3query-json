@@ -16,11 +16,12 @@ async function getTS3Info() {
       serverport: ts3_serverport,
       username: ts3_username,
       password: ts3_password,
-      nickname: "phil",
+      nickname: "TS3Query",
     });
 
     const serverInfo = await teamspeak.serverInfo();
-    const customInfo = getCustomInfo(serverInfo);
+    const clientsInfo = await teamspeak.clientList({ clientType: 0 });
+    const customInfo = getCustomInfo(clientsInfo, serverInfo);
 
     return { serverInfo, customInfo };
   } catch (e) {
@@ -30,7 +31,7 @@ async function getTS3Info() {
   }
 }
 
-function getCustomInfo(serverInfo) {
+function getCustomInfo(clientsInfo, serverInfo) {
   const uptime_seconds = serverInfo.virtualserverUptime;
   const uptime_days = Math.floor(uptime_seconds / (60 * 60 * 24));
   const uptime_remainder_hours = Math.floor((uptime_seconds % (60 * 60 * 24)) / (60 * 60));
@@ -41,15 +42,17 @@ function getCustomInfo(serverInfo) {
   const formattedHours = uptime_remainder_hours === 1 ? "hour" : "hours";
   const formattedMinutes = uptime_remainder_minutes === 1 ? "minute" : "minutes";
   const formattedSeconds = uptime_remainder_seconds === 1 ? "second" : "seconds";
-
   const formattedUptime = `${uptime_days} ${formattedDays} ${uptime_remainder_hours} ${formattedHours} ${uptime_remainder_minutes} ${formattedMinutes} ${uptime_remainder_seconds} ${formattedSeconds}`;
+
+  const onlineUsersNicknames = clientsInfo.length > 0 ? clientsInfo.map((clientsInfo) => clientsInfo.nickname).join(", ") : "No users online";
 
   const customInfo = {
     serverUptimeDays: uptime_days,
     serverUptimeHours: uptime_remainder_hours,
     serverUptimeMinutes: uptime_remainder_minutes,
     serverUptimeSeconds: uptime_remainder_seconds,
-    serverUptimeFormatted: formattedUptime
+    serverUptimeFormatted: formattedUptime,
+    usersOnlineFormatted: onlineUsersNicknames
   };
 
   return customInfo;
