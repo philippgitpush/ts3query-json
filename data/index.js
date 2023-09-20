@@ -136,7 +136,7 @@ teamspeak.on("clientmoved", async (ev) => {
   const originChannel = clydeClient.cid;
 
   // move to user
-  await new Promise(resolve => setTimeout(resolve, 3.2 * 1000));
+  await new Promise(resolve => setTimeout(resolve, 4.20 * 1000));
   await teamspeak.clientMove(clydeClient.clid, ev.channel.cid);
 
   // move back to origin
