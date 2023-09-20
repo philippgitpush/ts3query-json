@@ -1,4 +1,4 @@
-const { TeamSpeak, QueryProtocol } = require("ts3-nodejs-library");
+const { TeamSpeak, QueryProtocol, TextMessageTargetMode, TeamSpeakChannel } = require("ts3-nodejs-library");
 const http = require("http");
 
 // Environment
@@ -16,7 +16,7 @@ const teamspeak = new TeamSpeak({
   serverport: ts3_serverport,
   username: ts3_username,
   password: ts3_password,
-  nickname: "TS3Query"
+  nickname: "TS3Query (phil)"
 })
 
 let reconnectAttempts = 0;
@@ -77,3 +77,94 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(web_serverport, () => { console.log(`ServerQuery webserver is running on port ${web_serverport}.`) });
+
+// Move everyone to a channel
+async function moveUsersToSenderChannel(senderClient, clients) {
+  const channel = senderClient.cid;
+
+  for (const client of clients) {
+    if (client.nickname === "Clyde") continue;
+    if (client.cid !== channel) await client.move(channel);
+  }
+}
+
+// Textmessage in global chat event
+teamspeak.on("textmessage", async (ev) => {
+  if (ev.msg === "tome") {
+    const senderClient = await teamspeak.getClientById(ev.invoker);
+    const clients = await teamspeak.clientList({ clientType: 0 });
+
+    await moveUsersToSenderChannel(senderClient, clients);
+  }
+});
+
+const joinedUsers = []; // Used for join sound effects
+
+// Clientconnect event
+teamspeak.on("clientconnect", (ev) => {
+  if (ev.client.nickname === "Clyde") return;
+  joinedUsers.push(ev.client.nickname);
+  console.log(`User ${ev.client.nickname} joined the server.`);
+});
+
+// Clientmoved event
+teamspeak.on("clientmoved", async (ev) => {
+  // return if the user didn't join just recently
+  if (!joinedUsers.includes(ev.client.nickname)) return;
+  console.log(`User ${ev.client.nickname} moved to another channel for the first time since joining.`);
+
+  // remove the user from the just joined list
+  joinedUsers.splice(joinedUsers.indexOf(ev.client.nickname), 1);
+
+  const clydeClient = await teamspeak.getClientByName("Clyde");
+  const userList = await getChannelDescription("Phil's Crackhaus");
+
+  // return if the user doesn't have a special sound listed
+  if (!ev.client.nickname in userList) return;
+  const youtubeLink = userList[ev.client.nickname];
+
+  try {
+    await teamspeak.sendTextMessage(clydeClient.clid, TextMessageTargetMode.CLIENT, `!play ${youtubeLink}`);
+  } catch (error) {
+    console.error("Error sending message to Clyde:", error);
+  }
+
+  // return if clyde is already in the target channel
+  if (clydeClient.cid === ev.channel.cid) return;
+  const originChannel = clydeClient.cid;
+
+  // move to user
+  await new Promise(resolve => setTimeout(resolve, 3.2 * 1000));
+  await teamspeak.clientMove(clydeClient.clid, ev.channel.cid);
+
+  // move back to origin
+  await new Promise(resolve => setTimeout(resolve, 15 * 1000));
+  await teamspeak.clientMove(clydeClient.clid, originChannel);
+});
+
+function parseChannelDescription(description) { // Used for join sound effects
+  const userList = {};
+  const lines = description.split('\n');
+
+  for (const line of lines) {
+    const [user, youtubeLink] = line.split(';');
+    if (user && youtubeLink) userList[user.trim()] = youtubeLink.trim();
+  }
+
+  return userList;
+}
+
+async function getChannelDescription(channel_name) {
+  try {
+    const channel = await teamspeak.getChannelByName(channel_name);
+    const channelInfo = await teamspeak.channelInfo(channel);
+    const channelDescription = channelInfo.channelDescription;
+
+    const userList = parseChannelDescription(channelDescription);
+
+    return userList;
+  } catch (error) {
+    console.error("Error retrieving channel description:", error);
+    return [];
+  }
+}
