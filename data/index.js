@@ -16,7 +16,7 @@ const teamspeak = new TeamSpeak({
   serverport: ts3_serverport,
   username: ts3_username,
   password: ts3_password,
-  nickname: "TS3Query (phil)"
+  nickname: `ServerQuery (${ts3_username})`
 })
 
 let reconnectAttempts = 0;
@@ -30,7 +30,7 @@ teamspeak.on("error", async () => { retryConnection() });
 
 async function retryConnection() {
   reconnectAttempts++;
-  console.error("(Attempt " + reconnectAttempts + ") Error connecting to TeamSpeak server. Trying again in 60 seconds ...");
+  console.error(`(Attempt ${reconnectAttempts}) Error connecting to TeamSpeak server. Trying again in 60 seconds ...`);
   setTimeout(async () => { try { await teamspeak.reconnect() } catch (reconnectError) {} }, 60000);
 }
 
@@ -58,7 +58,7 @@ async function requestServerInfo() {
     serverUptimeMinutes: uptime_remainder_minutes,
     serverUptimeSeconds: uptime_remainder_seconds,
     serverUptimeFormatted: formattedUptime,
-    serverClientsFormatted: "(" + clientsInfo.length + ") " + onlineUsersNicknames
+    serverClientsFormatted: `(${clientsInfo.length}) ${onlineUsersNicknames}`
   };
 
   return { serverInfo, customInfo };
@@ -79,11 +79,12 @@ const server = http.createServer(async (req, res) => {
 server.listen(web_serverport, () => { console.log(`ServerQuery webserver is running on port ${web_serverport}.`) });
 
 // Move everyone to a channel
-async function moveUsersToSenderChannel(senderClient, clients) {
+async function moveUsersToSenderChannel(senderClient, includeClyde) {
+  const clients = await teamspeak.clientList({ clientType: 0 });
   const channel = senderClient.cid;
 
   for (const client of clients) {
-    if (client.nickname === "Clyde") continue;
+    if (client.nickname === "Clyde" && !includeClyde) continue;
     if (client.cid !== channel) await client.move(channel);
   }
 }
@@ -92,9 +93,10 @@ async function moveUsersToSenderChannel(senderClient, clients) {
 teamspeak.on("textmessage", async (ev) => {
   if (ev.msg === "tome") {
     const senderClient = await teamspeak.getClientById(ev.invoker);
-    const clients = await teamspeak.clientList({ clientType: 0 });
-
-    await moveUsersToSenderChannel(senderClient, clients);
+    await moveUsersToSenderChannel(senderClient, false);
+  } else if (ev.msg === "tome -a") {
+    const senderClient = await teamspeak.getClientById(ev.invoker);
+    await moveUsersToSenderChannel(senderClient, true);
   }
 });
 
