@@ -105,6 +105,7 @@ const joinedUsers = []; // Used for join sound effects
 // Clientconnect event
 teamspeak.on("clientconnect", (ev) => {
   if (ev.client.nickname === "Clyde") return;
+  if (joinedUsers.includes(ev.client.nickname)) return;
   joinedUsers.push(ev.client.nickname);
   console.log(`User ${ev.client.nickname} joined the server.`);
 });
